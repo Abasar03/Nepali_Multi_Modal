@@ -68,33 +68,36 @@ python src/multi_model_text_generation/trainer.py
 Nepali-MultiModal/
 ├── src/
 │   ├── multi_model_embedding_fusion/
-│   │   ├── data/                    
-│   │   ├── datasets/                 
-│   │   │   ├── captions.csv          
+│   │   ├── data/
+│   │   ├── datasets/
+│   │   │   ├── captions.csv
 │   │   │   └── translated_nepali_captions.txt
-│   │   ├── models/                   
-│   │   │   ├── model.py              
-│   │   │   └── multimodal_fusion.py  
-│   │   ├── config.py                
+│   │   ├── models/
+│   │   │   ├── model.py
+│   │   │   └── multimodal_fusion.py
+│   │   ├── config.py
 │   │   ├── main.py
-|   |   ├── Nepali_MultiModal.ipynb
-|   |   ├── setup_colab.py              
-│   │   └── trainer.py                 
-│   │   └── utils.py  
-|   |
-│   └── multi_model_text_generation/
-│       ├── data/                    
-│       ├── models/
-|       │   ├── get_embeddings.py      
-│       │   ├── layers.py        
-│       │   ├── multi_head_attention.py          
-│       │   ├── positional_embedding.py   
-│       │   ├── transformer_block.py             
-│       │   └── transformer.py                  
-│       ├── config.py              
-│       ├── main.py       
-│       └── trainer.py                    
+│   │   ├── Nepali_MultiModal.ipynb
+│   │   ├── setup_colab.py
+│   │   ├── trainer.py
+│   │   └── utils.py
+│   │
+│   ├── multi_model_text_generation/
+│   │   ├── data/
+│   │   ├── models/
+│   │   │   ├── get_embeddings.py
+│   │   │   ├── layers.py
+│   │   │   ├── multi_head_attention.py
+│   │   │   ├── positional_embedding.py
+│   │   │   ├── transformer_block.py
+│   │   │   └── transformer.py
+│   │   ├── config.py
+│   │   ├── main.py
+│   │   └── trainer.py
 │
 ├── LICENSE
-├── requirements.txt                 
-└── README.md                         
+├── requirements.txt
+└── README.md
+                       
+
+
