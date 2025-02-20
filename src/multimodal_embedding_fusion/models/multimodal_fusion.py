@@ -9,28 +9,28 @@ from src.multimodal_embedding_fusion.utils import make_train_valid_dfs
 
 
 class MultiModalFusion(nn.Module): 
-    def __init__(  
+    def __init__(   
         self,
         image_embedding=Configuration.image_embedding,
         text_embedding=Configuration.text_embedding, 
         fusion_dim=Configuration.fusion_dim
     ):
         super().__init__()    
-        self.image_projection=ProjectionHead(embedding_dim=image_embedding)
-        self.text_projection=ProjectionHead(embedding_dim=text_embedding)
         self.fusion_dim=fusion_dim  
         
         self.cross_attention=nn.MultiheadAttention(
             embed_dim=fusion_dim,
             num_heads=8,     
             dropout=0.1
-        )  
+        )   
 
         self.single_modality_proj=nn.Sequential(
             nn.Linear(fusion_dim, fusion_dim*2),
             nn.LayerNorm(fusion_dim*2),
-            nn.ReLU(),
-            nn.Dropout(0.1)  
+            nn.LeakyReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(fusion_dim*2, fusion_dim*2),
+            nn.LayerNorm(fusion_dim*2)      
         )           
 
         self.final_fusion = nn.Sequential(
@@ -62,7 +62,7 @@ class MultiModalFusion(nn.Module):
             return fused
 
 
-def train_combined(model_path):     
+def train_combined(model_path):              
     train_df, valid_df = make_train_valid_dfs()
     tokenizer = AutoTokenizer.from_pretrained(Configuration.text_tokenizer)
     train_loader = build_loaders(train_df, tokenizer, mode="train") 
@@ -92,11 +92,6 @@ def train_combined(model_path):
                     attention_mask=batch['attention_mask'] 
                 )
 
-
-            image_present = (batch['image'].sum(dim=[1,2,3]) != 0)  # Checks if image has content
-            text_present = (batch['input_ids'] != tokenizer.pad_token_id).any(dim=1)  # Checks if text has content
-
-    
             image_projected = contrastive_model.image_projection(image_features)
             text_projected = contrastive_model.text_projection(text_features)
             
@@ -108,7 +103,7 @@ def train_combined(model_path):
             optimizer.zero_grad()       
             loss.backward()
             optimizer.step()
-            
+             
             train_loss += loss.item()
         
         avg_train_loss = train_loss / len(train_loader)
