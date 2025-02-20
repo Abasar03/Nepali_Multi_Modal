@@ -40,7 +40,7 @@ class MultiModalFusion(nn.Module):
         if len(text_projection.shape) == 2:
             text_projection = text_projection.unsqueeze(0)
         
-        fused,_=self.cross_attention( 
+        fused=self.cross_attention( 
             query=image_projection,
             key=text_projection,
             value=text_projection
