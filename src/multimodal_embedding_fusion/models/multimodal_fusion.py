@@ -43,7 +43,7 @@ class MultiModalFusion(nn.Module):
         )          
                
     def forward(self,image_projection=None,text_projection=None):     
-        if image_projection is not None and text_proj is not None:
+        if image_projection is not None and text_projection is not None:
             if len(image_projection.shape) == 2:
                 image_projection = image_projection.unsqueeze(0)
             if len(text_projection.shape) == 2:
@@ -57,7 +57,7 @@ class MultiModalFusion(nn.Module):
             return self.final_fusion(fused)
         else: 
             fused = self.single_modality_proj(
-            image_proj if image_proj is not None else text_proj
+            image_projection if image_projection is not None else text_projection
             )
             return fused
 
@@ -90,17 +90,22 @@ def train_combined(model_path):
                 text_features = contrastive_model.text_encoder(
                     input_ids=batch['input_ids'],
                     attention_mask=batch['attention_mask'] 
-                )       
-            
+                )
+
+
+            image_present = (batch['image'].sum(dim=[1,2,3]) != 0)  # Checks if image has content
+            text_present = (batch['input_ids'] != tokenizer.pad_token_id).any(dim=1)  # Checks if text has content
+
+    
             image_projected = contrastive_model.image_projection(image_features)
             text_projected = contrastive_model.text_projection(text_features)
             
             fused = fusion_model(image_projected, text_projected)
             target = torch.cat([image_projected, text_projected], dim=-1) 
 
-            loss = criterion(fused, target)   
+            loss = criterion(fused, target)     
             
-            optimizer.zero_grad()
+            optimizer.zero_grad()       
             loss.backward()
             optimizer.step()
             
@@ -125,7 +130,7 @@ def train_combined(model_path):
                 text_features = contrastive_model.text_encoder(
                     input_ids=batch['input_ids'],
                     attention_mask=batch['attention_mask']
-                )
+                ) 
                 
                 image_projected = contrastive_model.image_projection(image_features)
                 text_projected = contrastive_model.text_projection(text_features)
