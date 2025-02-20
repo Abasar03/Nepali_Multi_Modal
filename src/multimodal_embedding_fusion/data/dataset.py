@@ -6,11 +6,14 @@ from src.multimodal_embedding_fusion.utils import get_transforms
 
 
 class ImageTextDataset(torch.utils.data.Dataset):
-    def __init__(self,image_filenames,captions,tokenizer,transforms):
+    def __init__(self,image_filenames,captions,tokenizer,transforms,modality_drop_prob=0):
         self.image_filenames=image_filenames
         self.captions=list(captions)
         self.tokenizer=tokenizer
         self.transforms=transforms
+
+        self.modality_drop_prob = modality_drop_prob
+
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.encoded_captions=tokenizer(
             self.captions,
@@ -29,6 +32,17 @@ class ImageTextDataset(torch.utils.data.Dataset):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         augmented = self.transforms(image=image)
         image_tensor = torch.tensor(augmented['image']).permute(2, 0, 1).float()
+
+        # Modality dropout
+        if self.modality_drop_prob > 0:
+            # 30% chance to mask EXACTLY ONE modality
+            if torch.rand(1) < self.modality_drop_prob:
+                # Randomly choose which modality to mask
+                if torch.rand(1) < 0.5:  # 50% chance for image
+                    image_tensor = torch.zeros_like(image_tensor)
+                else:  # 50% chance for text
+                    self.encoded_captions['input_ids'][idx] = [self.tokenizer.pad_token_id] * Configuration.max_length
+                    self.encoded_captions['attention_mask'][idx] = [0] * Configuration.max_length
 
         # Get text components
         input_ids = torch.tensor(self.encoded_captions['input_ids'][idx])
@@ -66,6 +80,8 @@ def build_loaders(dataframe,tokenizer,mode):
         dataframe['caption'].values,
         tokenizer=tokenizer,
         transforms=transforms,
+        modality_drop_prob=0.3 if mode == 'train' else 0
+
     )
     dataloader=torch.utils.data.DataLoader(
         dataset,

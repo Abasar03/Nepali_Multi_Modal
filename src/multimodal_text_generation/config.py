@@ -15,3 +15,4 @@ class config:
     dropout = 0.1
     max_seq_len=128 
      
+ 
