@@ -9,7 +9,7 @@ from src.multimodal_embedding_fusion.utils import make_train_valid_dfs
 
 
 class MultiModalFusion(nn.Module): 
-    def __init__( 
+    def __init__(  
         self,
         image_embedding=Configuration.image_embedding,
         text_embedding=Configuration.text_embedding, 
@@ -24,7 +24,15 @@ class MultiModalFusion(nn.Module):
             embed_dim=fusion_dim,
             num_heads=8,     
             dropout=0.1
-        )     
+        )  
+
+        self.single_modality_proj=nn.Sequential(
+            nn.Linear(fusion_dim, fusion_dim*2),
+            nn.LayerNorm(fusion_dim*2),
+            nn.ReLU(),
+            nn.Dropout(0.1)  
+        )           
+
         self.final_fusion = nn.Sequential(
             nn.Linear(fusion_dim, fusion_dim*2),  
             nn.LayerNorm(fusion_dim * 2), 
@@ -34,23 +42,29 @@ class MultiModalFusion(nn.Module):
             nn.LayerNorm(fusion_dim*2)
         )          
                
-    def forward(self,image_projection,text_projection):     
-        if len(image_projection.shape) == 2:
-            image_projection = image_projection.unsqueeze(0)
-        if len(text_projection.shape) == 2:
-            text_projection = text_projection.unsqueeze(0)
-        
-        fused=self.cross_attention( 
-            query=image_projection,
-            key=text_projection,
-            value=text_projection
-        )[0]
-        return self.final_fusion(fused)     
+    def forward(self,image_projection=None,text_projection=None):     
+        if image_projection is not None and text_proj is not None:
+            if len(image_projection.shape) == 2:
+                image_projection = image_projection.unsqueeze(0)
+            if len(text_projection.shape) == 2:
+                text_projection = text_projection.unsqueeze(0)
+            
+            fused=self.cross_attention( 
+                query=image_projection,
+                key=text_projection,
+                value=text_projection
+            )[0]
+            return self.final_fusion(fused)
+        else:
+            fused = image_projection if image_projection is not None else 
+            fused=self.single_modality_proj(fused)
+            return fused
 
-def train_combined(model_path):    
+
+def train_combined(model_path):     
     train_df, valid_df = make_train_valid_dfs()
     tokenizer = AutoTokenizer.from_pretrained(Configuration.text_tokenizer)
-    train_loader = build_loaders(train_df, tokenizer, mode="train")
+    train_loader = build_loaders(train_df, tokenizer, mode="train") 
     valid_loader = build_loaders(valid_df, tokenizer, mode="valid")
     
     contrastive_model = ContrastiveModel().to(Configuration.device)
@@ -61,7 +75,7 @@ def train_combined(model_path):
     optimizer = torch.optim.AdamW(fusion_model.parameters(), lr=1e-4)
     criterion = nn.MSELoss()    
     
-    best_loss = float('inf') 
+    best_loss = float('inf')  
     
     for epoch in range(Configuration.num_epochs): 
         fusion_model.train() 
