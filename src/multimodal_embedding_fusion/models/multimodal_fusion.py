@@ -55,8 +55,10 @@ class MultiModalFusion(nn.Module):
                 value=text_projection
             )[0]
             return self.final_fusion(fused)
-        else:
-            fused = image_projection if image_projection is not None else fused=self.single_modality_proj(fused)
+        else: 
+            fused = self.single_modality_proj(
+            image_proj if image_proj is not None else text_proj
+            )
             return fused
 
 
