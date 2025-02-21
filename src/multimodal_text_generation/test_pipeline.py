@@ -13,8 +13,6 @@ from src.multimodal_embedding_fusion.models.multimodal_fusion import MultiModalF
 
 from torchvision import transforms
 
-
-
 def Pipeline_test(input_image=None, input_text=None):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     tokenizer = AutoTokenizer.from_pretrained('NepBERTa/NepBERTa')
@@ -32,25 +30,30 @@ def Pipeline_test(input_image=None, input_text=None):
     transformer_model.eval()
 
     with torch.no_grad():
+        image_projected = None
+        text_projected = None
+        
         if input_image is not None:
-            image_features=contrastive_model.image_encoder(input_image)
+            image_features = contrastive_model.image_encoder(input_image)
+            image_projected = contrastive_model.image_projection(image_features)
+            
         if input_text is not None:
-            text_features=contrastive_model.text_encoder(
+            text_features = contrastive_model.text_encoder(
                 input_ids=input_text['input_ids'],
                 attention_mask=input_text['attention_mask']
             )
+            text_projected = contrastive_model.text_projection(text_features)
 
-        if input_image is not None and input_text is not None:
-            fused_embedding=fusion_model(image_features,text_features)
-        elif input_image is not None:
-            fused_embedding=fusion_model.image_projection(image_features)
-        elif input_text is not None:
-            fused_embedding=fusion_model.text_projection(text_features)
+        if image_projected is not None and text_projected is not None:
+            fused_embedding = fusion_model(image_projected, text_projected)
+        elif image_projected is not None:
+            fused_embedding = fusion_model(image_projection=image_projected)
+        elif text_projected is not None:
+            fused_embedding = fusion_model(text_projection=text_projected)
         else:
-            raise ValueError('Must provide at least one input.')
+            raise ValueError('Must provide at least one input (image or text).')
 
         print(f"Pre-padding shape: {fused_embedding.shape}")
-
 
         if len(fused_embedding.shape) == 3:
             fused_embedding = fused_embedding.squeeze(1)
