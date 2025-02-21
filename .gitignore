@@ -3,4 +3,5 @@ datasets/Flickr8k_Nepali_Dataset.zip
 __pycache__/
 *.pt
 *.ipynb_checkpoints/
+venv
 .gitignore

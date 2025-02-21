@@ -2,3 +2,5 @@ timm
 transformers
 nltk 
 rouge-score
+streamlit
+st_multimodal_chatinput
