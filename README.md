@@ -1,8 +1,6 @@
-# Nepali MultiModal Large Language Model
-
+# Nepali MultiModal
 ## Introduction
-
-Nepali MultiModal Large Language Model (N-MM-LLM) focuses on learning aligned representation between Nepali text and images. We utilize pre-trained NepBERTa for Nepali text understanding and CLIP's vision encoder for image processing, connecting them through trainable projection layers that create a shared embedding space. The framework employs contrastive learning to align the text and image embeddings. We would like to demonstrate that this approach effectively learns cross-modal relationships while preserving the strong pre-trained representations of both modalities. Rather than fine-tuning the entire models, we introduce an efficient approach that freezes the base encoders and only trains lightweight projection layers, significantly reducing computational requirements while maintaining performance. We will use an adaptive layer to map embeddings and then use an attention mechanism to learn textual relationships. This work will be the first step towards multimodal AI systems for Nepali language, providing a strong foundation for future research and applications in multimodal learning.
+Nepali Multimodal Large Language Model (N-MM-LLM) focuses on learning aligned representation between Nepali text and images. We utilize pre-trained NepBERTa for Nepali text understanding and CLIP's vision encoder for image processing, connecting them through trainable projection layers that create a shared embedding space. The framework employs contrastive learning to align the text and image embeddings. We would like to demonstrate that this approach effectively learns cross-modal relationships while preserving the strong pre-trained representations of both modalities. Rather than fine-tuning the entire models, we introduce an efficient approach that freezes the base encoders and only trains lightweight projection layers, significantly reducing computational requirements while maintaining performance. We will use an adaptive layer to map embeddings and then use an attention mechanism to learn textual relationships. This work will be the first step towards multimodal AI systems for Nepali language, providing a strong foundation for future research and applications in multimodal learning.
 
 
 ---
@@ -67,36 +65,38 @@ python src/multi_model_text_generation/trainer.py
 ```
 
 ## Repository Structure
-Nepali-MultiModal/
-├── src/
-│   ├── multi_model_embedding_fusion/
-│   │   ├── data/                    
-│   │   ├── datasets/                 
-│   │   │   ├── captions.csv          
-│   │   │   └── translated_nepali_captions.txt
-│   │   ├── models/                   
-│   │   │   ├── model.py              
-│   │   │   └── multimodal_fusion.py  
-│   │   ├── config.py                
-│   │   ├── main.py
-|   |   ├── Nepali_MultiModal.ipynb
-|   |   ├── setup_colab.py              
-│   │   └── trainer.py                 
-│   │   └── utils.py  
-|   |
-│   └── multi_model_text_generation/
-│       ├── data/                    
-│       ├── models/
-|       │   ├── get_embeddings.py      
-│       │   ├── layers.py        
-│       │   ├── multi_head_attention.py          
-│       │   ├── positional_embedding.py   
-│       │   ├── transformer_block.py             
-│       │   └── transformer.py                  
-│       ├── config.py              
-│       ├── main.py       
-│       └── trainer.py                    
-│
-├── LICENSE
-├── requirements.txt                 
-└── README.md                         
+```
+ Nepali Multi Modal LLM/
+└─ src/
+   ├─ multi_model_embedding_fusion/
+   │  ├─ data/
+   │  ├─ datasets/
+   │  │  ├─ captions.csv
+   │  │  └─ translated_nepali_captions.txt
+   │  ├─ models/
+   │  │  ├─ model.py
+   │  │  └─ multimodal_fusion.py
+   │  ├─ config.py
+   │  ├─ main.py
+   │  ├─ Nepali_MultiModal.ipynb
+   │  ├─ setup_colab.py
+   │  ├─ trainer.py
+   │  └─ utils.py
+   ├─ multi_model_text_generation/
+   │  ├─ data/
+   │  ├─ models/
+   │  │  ├─ get_embeddings.py
+   │  │  ├─ layers.py
+   │  │  ├─ multi_head_attention.py
+   │  │  ├─ positional_embedding.py
+   │  │  ├─ transformer_block.py
+   │  │  └─ transformer.py
+   │  ├─ config.py
+   │  ├─ main.py
+   │  └─ trainer.py
+   ├─ LICENSE
+   ├─ requirements.py
+   └─ README.md
+```
+
+
