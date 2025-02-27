@@ -149,8 +149,6 @@ class MultiModalFusion(nn.Module):
         ortho_loss = torch.mean(torch.abs(sim_matrix))
         return ortho_loss
     
-    
-    
 def train_combined(model_path):              
     train_df, valid_df = make_train_valid_dfs()
     tokenizer = AutoTokenizer.from_pretrained(Configuration.text_tokenizer)

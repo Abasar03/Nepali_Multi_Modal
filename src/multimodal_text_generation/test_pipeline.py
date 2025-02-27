@@ -53,7 +53,6 @@ def Pipeline_test(input_image=None, input_text=None):
         else:
             raise ValueError('Must provide at least one input (image or text).')
 
-        print(f"Pre-padding shape: {fused_embedding.shape}")
 
         if len(fused_embedding.shape) == 3:
             fused_embedding = fused_embedding.squeeze(1)
@@ -84,7 +83,12 @@ def Pipeline_test(input_image=None, input_text=None):
             input_ids.squeeze().tolist(),
             skip_special_tokens=True
         )
-    return generated_caption
+        
+        
+        model_path_1 = '/content/drive/MyDrive/Minor_project/small_autoregressive_v3.pt'
+        generated_caption_1 = run_inference(model_path_1, fused_embedding, device)
+
+    return generated_caption_1
 
 
 from PIL import Image
@@ -112,11 +116,9 @@ text_input = tokenizer(
     truncation=True
 ).to(device)
 
-# Image only
+
 caption = Pipeline_test(input_image=processed_image)
-# Text only
 caption1 = Pipeline_test(input_text=text_input)
-# Multimodal
 caption2 = Pipeline_test(input_image=processed_image, input_text=text_input)
 print(caption)
 print(caption1)
