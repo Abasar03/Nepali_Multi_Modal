@@ -4,8 +4,8 @@ from transformers import AutoTokenizer, AutoModel
 from src.multimodal_text_generation.models.transformer import Transformer
 
 def generate_caption(model, tokenizer, fused_embedding, device, max_length=50):
-    model.eval()
-    with torch.no_grad():
+    model.eval() 
+    with torch.no_grad(): 
         fused_embedding = fused_embedding.view(1, 1024).to(device)  
         generated_ids = [tokenizer.cls_token_id]
         sep_token_id = torch.tensor(tokenizer.sep_token_id).to(device) 
@@ -71,16 +71,18 @@ def run_inference(model_path, test_image_embedding, device, max_attempts=3):
                 return generated_caption
 
         print(f"Failed to generate caption after {max_attempts} attempts")
-        return None
+        return None 
 
     except Exception as e:
         print(f"Error during inference: {str(e)}")
         import traceback
         print(traceback.format_exc())
-        return None
+        return None 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using device: {device}")
 
 
+ 
+ 
  

@@ -149,57 +149,6 @@ class MultiModalFusion(nn.Module):
         ortho_loss = torch.mean(torch.abs(sim_matrix))
         return ortho_loss
     
-    def forward(self, image_projection=None, text_projection=None, return_ortho_loss=False):
-        if image_projection is not None and text_projection is not None:
-            # Initial projections
-            image_proj = self.image_input_proj(image_projection)
-            text_proj = self.text_input_proj(text_projection)
-
-            # Multi-head attention with learned weights
-            attention_outputs = []
-            for i, attention in enumerate(self.attention_heads):
-                att_out, _ = attention(
-                    query=image_proj.unsqueeze(0),
-                    key=text_proj.unsqueeze(0),
-                    value=text_proj.unsqueeze(0)
-                )
-                attention_outputs.append(att_out.squeeze(0) * self.attention_weights[i])
-
-            # Combine attention outputs
-            combined_attention = sum(attention_outputs)
-
-            # Apply gating mechanism
-            gate_values = self.gate(combined_attention)
-            gated_features = combined_attention * gate_values
-
-            # Apply semantic projections
-            semantic_features = [proj(gated_features) for proj in self.semantic_projections]
-
-            # Concatenate different semantic representations with original features
-            combined_features = torch.cat([gated_features] + semantic_features, dim=-1)
-
-            # Final fusion
-            fused = self.final_fusion(combined_features)
-
-            if return_ortho_loss:
-                ortho_loss = self.orthogonal_regularization(fused)
-                return fused, ortho_loss
-            return fused
-        else:
-            input_tensor = image_projection if image_projection is not None else text_projection
-            semantic_features = [proj(input_tensor) for proj in self.semantic_projections]
-            combined_features = torch.cat([input_tensor] + semantic_features, dim=-1)
-            return self.final_fusion(combined_features)
-
-
-def contrastive_loss(fused1, fused2, positive_margin=0.8, negative_margin=0.2):
-    """Enhanced contrastive loss with both positive and negative margins"""
-    similarity = F.cosine_similarity(fused1, fused2, dim=-1)
-
-    # For different pairs, penalize high similarity more aggressively
-    negative_loss = F.relu(similarity - negative_margin)
-    return torch.mean(negative_loss)
-    
 def train_combined(model_path):              
     train_df, valid_df = make_train_valid_dfs()
     tokenizer = AutoTokenizer.from_pretrained(Configuration.text_tokenizer)
