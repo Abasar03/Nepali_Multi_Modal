@@ -1,4 +1,9 @@
+import sys
 import os
+
+# Get the parent directory (where both frontend and src are located)
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import streamlit as st
 import torch
 from PIL import Image
@@ -15,7 +20,7 @@ from src.multimodal_embedding_fusion.config import Configuration
 @st.cache_resource
 def load_model():
     model = ContrastiveModel()
-    model_path = r"C:\Users\riwas\Downloads\boosted_contrastive_model.pt"  # Use raw string to avoid backslash issues
+    model_path = r"C:\Users\riwas\Downloads\contrastive_model_new.pt"  # Use raw string to avoid backslash issues
     
     state_dict = torch.load(model_path, map_location="cpu")
     model.load_state_dict(state_dict, strict=False)  # strict=False allows partial loading
@@ -107,8 +112,9 @@ if __name__ == "__main__":
                 st.image(image, caption="Uploaded Image", use_container_width=True)
                 
                 #Retrieve captions from captions.csv
-                df = pd.read_csv("src/multimodal_embedding_fusion/datasets/captions.csv")
-                captions = df['caption'].head(100).tolist()
+                captions_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../src/multimodal_embedding_fusion/datasets/captions.csv"))
+                df = pd.read_csv(captions_path)
+                captions = df['caption'].head(50).tolist()
                 st.write("The test captions: ")
                 st.write(captions)
                 
@@ -119,6 +125,7 @@ if __name__ == "__main__":
                     scores.append(score)
                 
                 captions_with_scores = [(caption, score) for caption, score in zip(captions, scores)]
+                print(captions_with_scores)
 
                 # Sort the list in descending order by score
                 captions_with_scores.sort(key=lambda x: x[1], reverse=True)
