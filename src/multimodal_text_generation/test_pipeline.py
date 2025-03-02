@@ -13,8 +13,6 @@ from src.multimodal_embedding_fusion.models.multimodal_fusion import MultiModalF
 
 from torchvision import transforms
 
-
-
 def Pipeline_test(input_image=None, input_text=None):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     tokenizer = AutoTokenizer.from_pretrained('NepBERTa/NepBERTa')
@@ -32,24 +30,28 @@ def Pipeline_test(input_image=None, input_text=None):
     transformer_model.eval()
 
     with torch.no_grad():
+        image_projected = None
+        text_projected = None
+        
         if input_image is not None:
-            image_features=contrastive_model.image_encoder(input_image)
+            image_features = contrastive_model.image_encoder(input_image)
+            image_projected = contrastive_model.image_projection(image_features)
+            
         if input_text is not None:
-            text_features=contrastive_model.text_encoder(
+            text_features = contrastive_model.text_encoder(
                 input_ids=input_text['input_ids'],
                 attention_mask=input_text['attention_mask']
             )
+            text_projected = contrastive_model.text_projection(text_features)
 
-        if input_image is not None and input_text is not None:
-            fused_embedding=fusion_model(image_features,text_features)
-        elif input_image is not None:
-            fused_embedding=fusion_model.image_projection(image_features)
-        elif input_text is not None:
-            fused_embedding=fusion_model.text_projection(text_features)
+        if image_projected is not None and text_projected is not None:
+            fused_embedding = fusion_model(image_projected, text_projected)
+        elif image_projected is not None:
+            fused_embedding = fusion_model(image_projection=image_projected)
+        elif text_projected is not None:
+            fused_embedding = fusion_model(text_projection=text_projected)
         else:
-            raise ValueError('Must provide at least one input.')
-
-        print(f"Pre-padding shape: {fused_embedding.shape}")
+            raise ValueError('Must provide at least one input (image or text).')
 
 
         if len(fused_embedding.shape) == 3:
@@ -81,7 +83,12 @@ def Pipeline_test(input_image=None, input_text=None):
             input_ids.squeeze().tolist(),
             skip_special_tokens=True
         )
-    return generated_caption
+        
+        
+        model_path_1 = '/content/drive/MyDrive/Minor_project/small_autoregressive_v3.pt'
+        generated_caption_1 = run_inference(model_path_1, fused_embedding, device)
+
+    return generated_caption_1
 
 
 from PIL import Image
@@ -109,11 +116,9 @@ text_input = tokenizer(
     truncation=True
 ).to(device)
 
-# Image only
+
 caption = Pipeline_test(input_image=processed_image)
-# Text only
 caption1 = Pipeline_test(input_text=text_input)
-# Multimodal
 caption2 = Pipeline_test(input_image=processed_image, input_text=text_input)
 print(caption)
 print(caption1)
