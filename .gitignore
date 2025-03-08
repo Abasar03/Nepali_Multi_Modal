@@ -5,3 +5,10 @@ __pycache__/
 *.ipynb_checkpoints/
 venv
 .gitignore
+accuracy.py
+image_retrieval.py
+new_acc.py
+streamLit.py
+test.py
+testing_pipeline.py
+visualize.py

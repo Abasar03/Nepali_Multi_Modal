@@ -4,6 +4,11 @@ from io import BytesIO
 from PIL import Image
 from st_multimodal_chatinput import multimodal_chatinput
 
+import sys
+import os
+
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import torch
 from transformers import AutoTokenizer, AutoModel
@@ -17,7 +22,8 @@ from src.multimodal_text_generation.models.transformer import Transformer
 
 from src.multimodal_embedding_fusion.models.model import ContrastiveModel
 from src.multimodal_embedding_fusion.models.multimodal_fusion import MultiModalFusion
-from src.multimodal_embedding_fusion.models.model import ProjectionHead
+
+
 from torchvision import transforms
 
 @st.cache_resource
@@ -25,72 +31,77 @@ def load_models():
     #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     contrastive_model = ContrastiveModel()
-    contrastive_model_path = r"C:\Users\riwas\Downloads\boosted_contrastive_model.pt"
+    contrastive_model_path = r"C:\Users\riwas\Downloads\contrastive_model_new.pt"
     contrastive_model.load_state_dict(torch.load(contrastive_model_path, map_location="cpu"), strict= True)
     contrastive_model.eval()
 
+    fusion_model = MultiModalFusion()
+    fusion_model_path = r"C:\Users\riwas\Downloads\fusion_model.pt"
+    fusion_model.load_state_dict(torch.load(fusion_model_path, map_location="cpu"))
+    fusion_model.eval()
+
     transformer_model = Transformer(tokenizer)
-    transformer_model_path = r"C:\Users\riwas\Downloads\autoregressive_generation_v1.pt"
+    # transformer_model_path = r"C:\Users\riwas\Downloads\small_autoregressive_v3.pt"
+    transformer_model_path = r"C:\Users\riwas\Downloads\autoregressive_model.pt"
+
     transformer_model.load_state_dict(torch.load(transformer_model_path, map_location="cpu"), strict= True)
     transformer_model.eval()
 
-    return contrastive_model, transformer_model
+    return contrastive_model, fusion_model, transformer_model
+
+
 
 def Pipeline_test(input_image=None, input_text=None):
-
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     tokenizer = AutoTokenizer.from_pretrained('NepBERTa/NepBERTa')
 
-    contrastive_model, transformer_model = load_models()
+    contrastive_model, fusion_model, transformer_model = load_models()
 
     with torch.no_grad():
+        image_projected = None
+        text_projected = None
+        
         if input_image is not None:
-            image_features1 = contrastive_model.image_encoder(input_image)
-            image_features = contrastive_model.image_projection(image_features1)
-            print(f'Image shape: {image_features.shape}')
+            image_features = contrastive_model.image_encoder(input_image)
+            image_projected = contrastive_model.image_projection(image_features)
+            
         if input_text is not None:
-            text_features1 = contrastive_model.text_encoder(
+            text_features = contrastive_model.text_encoder(
                 input_ids=input_text['input_ids'],
                 attention_mask=input_text['attention_mask']
             )
-            text_features = contrastive_model.text_projection(text_features1)
-            print(f'text shape: {text_features.shape}')
+            text_projected = contrastive_model.text_projection(text_features)
 
-
-        # **Concatenation instead of Fusion Model**
-        if input_image is not None and input_text is not None:
-            fused_embedding = torch.cat([image_features, text_features], dim=-1)  # Concatenation
-        elif input_image is not None:
-            fused_embedding = image_features
-        elif input_text is not None:
-            fused_embedding = text_features
+        if image_projected is not None and text_projected is not None:
+            fused_embedding = fusion_model(image_projected, text_projected)
+        elif image_projected is not None:
+            fused_embedding = fusion_model(image_projection=image_projected)
+        elif text_projected is not None:
+            fused_embedding = fusion_model(text_projection=text_projected)
         else:
-            raise ValueError("Must provide at least one input.")
+            raise ValueError('Must provide at least one input (image or text).')
 
-        print(f"Pre-padding shape: {fused_embedding.shape}")  # Debugging output
 
-        # Ensure we have [batch_size, features]
         if len(fused_embedding.shape) == 3:
-            fused_embedding = fused_embedding.squeeze(1)  # Remove sequence dimension if present
+            fused_embedding = fused_embedding.squeeze(1)
 
-        # Handle dimension mismatch (ensuring fixed 768-dim output)
-        #edited to skip fusion layer (ensuring fixed 1034-dim output)
-        if fused_embedding.shape[-1] < 1024:
-            padding = torch.zeros(
-                fused_embedding.size(0),  # batch size
-                1024 - fused_embedding.shape[-1]
-            ).to(device)
-
-            fused_embedding = torch.cat([fused_embedding, padding], dim=-1)  # Padding to 768 #1024 dimensions
+        if fused_embedding.shape[-1] != 1024:
+            if fused_embedding.shape[-1] < 1024:
+                padding = torch.zeros(
+                    fused_embedding.size(0),
+                    1024 - fused_embedding.shape[-1]
+                ).to(device)
+                fused_embedding = torch.cat([fused_embedding, padding], dim=-1)
+            else:
+                fused_embedding = fused_embedding[:, :1024]
 
         print(f"Post-padding shape: {fused_embedding.shape}")
 
-        # **Autoregressive text generation**
         input_ids = torch.tensor([tokenizer.cls_token_id]).unsqueeze(0).to(device)
 
         for _ in range(config.max_seq_len - 1):
             outputs = transformer_model(fused_embedding, input_ids)
-            next_token = outputs.argmax(-1)[:, -1].unsqueeze(-1)
+            next_token = outputs.argmax(-1)[:, -1].unsqueeze(-1) 
             input_ids = torch.cat([input_ids, next_token], dim=-1)
 
             if next_token.item() == tokenizer.sep_token_id:
@@ -100,8 +111,8 @@ def Pipeline_test(input_image=None, input_text=None):
             input_ids.squeeze().tolist(),
             skip_special_tokens=True
         )
-    
-    return generated_caption
+
+        return generated_caption
 
 def decode_base64(img_url):
     if img_url.startswith('data:image'):
@@ -128,6 +139,7 @@ with st.container():
             text = chatinput['text']
             uploaded_image = chatinput['images']
             image = decode_base64(uploaded_image[0])   
+            st.write(image)
             
             device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
             processed_image = image_transform(image).unsqueeze(0).to(device)
@@ -140,7 +152,7 @@ with st.container():
             ).to(device)
 
             output = Pipeline_test(input_image=processed_image, input_text=text_input)
-            st.write(output)
+            st.write(f'generated caption: {output}')
 
 
 
@@ -157,18 +169,22 @@ with st.container():
             ).to(device)
 
             output = Pipeline_test(input_text=text_input)
-            st.write(output)
+            st.write(f'generated caption: {output}')
+
         
         elif chatinput['images']:
+
+
             img_url = chatinput['images'] 
             image = decode_base64(img_url[0])
+            st.write(image)
+
             #handle image
             
             device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
             processed_image = image_transform(image).unsqueeze(0).to(device)
 
             output = Pipeline_test(input_image=processed_image)
-            st.write(output)
+            st.write(f'generated caption: {output}')
         else:
             st.write('The weather seems great huh!')
-            
