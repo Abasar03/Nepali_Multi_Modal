@@ -121,7 +121,7 @@ def train_model(model,dataloader,valid_loader,num_epochs,device):
         #     all_hypotheses,
         #     [ref[0] for ref in all_references],  
         #     avg=True
-        # )
+        # ) 
         avg_val_loss = val_loss / len(valid_loader)
         print("\nValidation Metrics:")
         # print(f"BLEU-4 Score: {bleu_score:.4f}")

@@ -16,9 +16,6 @@ from torch.utils.data import dataset,DataLoader
 
 from src.multimodal_text_generation.config import config
 from src.multimodal_text_generation.models.transformer import Transformer
-# from src.multimodal_text_generation.data.dataset import CaptionEmbeddingDataset, collate_fn
-# from src.multimodal_text_generation.utils.inference import run_inference
-# from src.multimodal_text_generation.trainer import train_model
 
 from src.multimodal_embedding_fusion.models.model import ContrastiveModel
 from src.multimodal_embedding_fusion.models.multimodal_fusion import MultiModalFusion
@@ -31,18 +28,17 @@ def load_models():
     #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     contrastive_model = ContrastiveModel()
-    contrastive_model_path = r"C:\Users\riwas\Downloads\contrastive_model_new.pt"
+    contrastive_model_path = r"~\Downloads\models\contrastive_model_new.pt"
     contrastive_model.load_state_dict(torch.load(contrastive_model_path, map_location="cpu"), strict= True)
     contrastive_model.eval()
 
     fusion_model = MultiModalFusion()
-    fusion_model_path = r"C:\Users\riwas\Downloads\fusion_model.pt"
+    fusion_model_path = r"~\Downloads\models\Downloads\small_fused_v2.pt"
     fusion_model.load_state_dict(torch.load(fusion_model_path, map_location="cpu"))
     fusion_model.eval()
 
     transformer_model = Transformer(tokenizer)
-    # transformer_model_path = r"C:\Users\riwas\Downloads\small_autoregressive_v3.pt"
-    transformer_model_path = r"C:\Users\riwas\Downloads\autoregressive_model.pt"
+    transformer_model_path = r"~\Downloads\models\Downloads\small_autoregressive_v2.pt"
 
     transformer_model.load_state_dict(torch.load(transformer_model_path, map_location="cpu"), strict= True)
     transformer_model.eval()
